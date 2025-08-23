@@ -1,9 +1,11 @@
 run:
 	@uvicorn workout_api.main:app --reload
 
-create-migrations:
+# usar com o git bash, PYTHONPATH NÃO FUNCIONA NO WINDOWS !!!!
+create-migrations: 
 	@PYTHONPATH=$PYTHONPATH:$(pwd) alembic revision --autogenerate -m $(d)
 
-run-migrations:
+# usar com o git bash, PYTHONPATH NÃO FUNCIONA NO WINDOWS !!!!
+run-migrations: 
 	@PYTHONPATH=$PYTHONPATH:$(pwd) alembic upgrade head
 	
