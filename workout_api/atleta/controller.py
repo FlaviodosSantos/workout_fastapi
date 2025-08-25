@@ -3,7 +3,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Body, HTTPException, Query, status
 from pydantic import UUID4
 
-from workout_api.atleta.schemas import AtletaIn, AtletaOut, AtletaUpdate
+from workout_api.atleta.schemas import AtletaIn, AtletaListOut, AtletaOut, AtletaUpdate
 from workout_api.atleta.models import AtletaModel
 from workout_api.categorias.models import CategoriaModel
 from workout_api.centro_treinamento.models import CentroTreinamentoModel
@@ -67,23 +67,30 @@ async def post(
     '/', 
     summary='Consultar todos os Atletas',
     status_code=status.HTTP_200_OK,
-    response_model=list[AtletaOut],
+    response_model=list[AtletaListOut],
 )
 async def query(
     db_session: DatabaseDependency,
     nome: str | None = Query(None, description="Filtrar pelo nome do atleta"),
     cpf: str | None = Query(None, description="Filtrar pelo CPF do atleta"),
-) -> list[AtletaOut]:
-    stmt = select(AtletaModel)
+) -> list[AtletaListOut]:
+    stmt = select(AtletaModel).join(AtletaModel.categoria).join(AtletaModel.centro_treinamento)
 
     if nome:
         stmt = stmt.filter(AtletaModel.nome.ilike(f"%{nome}%"))
     if cpf:
         stmt = stmt.filter(AtletaModel.cpf == cpf)
 
-    atletas: list[AtletaOut] = (await db_session.execute(stmt)).scalars().all()
-    return [AtletaOut.model_validate(atleta) for atleta in atletas]
+    atletas = (await db_session.execute(stmt)).scalars().all()
 
+    return [
+        {
+            "nome": atleta.nome,
+            "categoria": atleta.categoria.nome,
+            "centro_treinamento": atleta.centro_treinamento.nome,
+        }
+        for atleta in atletas
+    ]
 
 
 @router.get(

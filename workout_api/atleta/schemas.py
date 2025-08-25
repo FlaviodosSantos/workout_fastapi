@@ -28,3 +28,8 @@ class AtletaUpdate(BaseSchema):
     nome: Annotated[Optional[str], Field(None, description='Nome do atleta', example='Joao', max_length=50)]
     idade: Annotated[Optional[int], Field(None, description='Idade do atleta', example=25)]
 
+
+class AtletaListOut(BaseSchema):
+    nome: str
+    centro_treinamento: str
+    categoria: str
