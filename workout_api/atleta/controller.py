@@ -1,4 +1,5 @@
 from datetime import datetime
+from fastapi_pagination import Page, paginate
 from sqlalchemy.exc import IntegrityError
 from uuid import uuid4
 from fastapi import APIRouter, Body, HTTPException, Query, status
@@ -77,13 +78,13 @@ async def post(
     '/', 
     summary='Consultar todos os Atletas',
     status_code=status.HTTP_200_OK,
-    response_model=list[AtletaListOut],
+    response_model=Page[AtletaListOut],
 )
 async def query(
     db_session: DatabaseDependency,
     nome: str | None = Query(None, description="Filtrar pelo nome do atleta"),
     cpf: str | None = Query(None, description="Filtrar pelo CPF do atleta"),
-) -> list[AtletaListOut]:
+) -> Page[AtletaListOut]:
     stmt = select(AtletaModel).join(AtletaModel.categoria).join(AtletaModel.centro_treinamento)
 
     if nome:
@@ -93,14 +94,17 @@ async def query(
 
     atletas = (await db_session.execute(stmt)).scalars().all()
 
-    return [
-        {
-            "nome": atleta.nome,
-            "categoria": atleta.categoria.nome,
-            "centro_treinamento": atleta.centro_treinamento.nome,
-        }
+    lista = [
+        AtletaListOut(
+            nome=atleta.nome,
+            categoria=atleta.categoria.nome,
+            centro_treinamento=atleta.centro_treinamento.nome,
+        )
         for atleta in atletas
     ]
+
+    return paginate(lista)
+
 
 
 @router.get(
